@@ -1,0 +1,63 @@
+.container .header .tit {
+  line-height: 60px;
+  margin-left: 30px;
+  font-size: 20px;
+  color: #93979a;
+}
+.container .main {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  padding-top: 80px;
+}
+.container .main .flex {
+  width: 700px;
+  height: 400px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  color: #93979a;
+  font-size: 18px;
+}
+.container .main .flex .form {
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-content: space-around;
+}
+.container .main .flex .title {
+  height: 60px;
+  line-height: 60px;
+  padding-left: 30px;
+  font-size: 18px;
+  border-bottom: 2px solid #ccc;
+}
+.container .main .flex .name {
+  font-weight: 700;
+}
+.container .main .flex .name #username {
+  margin-left: 30px;
+  margin-top: 50px;
+  width: 200px;
+  height: 30px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  outline: 0;
+}
+.container .main .flex .name #username:focus {
+  border: 1px solid #ccc;
+  box-shadow: 0 0 5px 5px #a6c8df;
+  border-radius: 3px;
+}
+.container .main .flex button {
+  margin-top: 40px;
+  margin-left: 89px;
+  width: 90px;
+  height: 40px;
+  border: 0;
+  border-radius: 5px;
+  background-color: #5ba4d1;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+}

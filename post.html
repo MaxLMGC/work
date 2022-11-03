@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Post</title>
+    <link rel="stylesheet" href="./style/initialize.css" />
+    <link rel="stylesheet" href="./style/post.css" />
+    <script src="./js/jquery3.3.1.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- 头部 -->
+      <div class="header">
+        <div class="flex">
+          <!-- 左边 -->
+          <div class="left">Work</div>
+          <!-- 右边 个人界面 -->
+          <div class="login">
+            <div id="back">Back</div>
+            <div id="name">
+              <span class="user"></span>
+              <span class="triangle"></span>
+              <ul class="list">
+                <li>
+                  <span id="out">Sign out</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="main">
+        <div class="center">
+          <div class="head"></div>
+          <div class="num"></div>
+        </div>
+        <div class="post-reply">
+          <div class="reply-item">
+            <div class="name"><span>josa</span>:</div>
+            <div class="text">简简单单几句话就解决了</div>
+          </div>
+        </div>
+        <div class="reply">
+          <textarea></textarea>
+          <button id="reply">reply</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    $(function () {
+      // 获取当前文章的id
+      var id = getId()
+
+      //十秒自动刷新数据
+      setInterval(function () {
+        $.ajax({
+          url: 'http://localhost:7777/api/threads/' + id,
+          type: 'GET',
+          dataType: 'json',
+          success: function (res) {
+            getPostList(res, false)
+          },
+          error: function (err) {
+            alert('The current title is missing!')
+            window.location.href = './index.html'
+          },
+        })
+      }, 10000)
+
+      // 当前帖子的所有数据
+      let thread = null
+
+      // 检测是否登录
+      if (!window.localStorage.getItem('name')) {
+        window.location.href = './index.html'
+      }
+      // 读取个人数据
+      var nameData = JSON.parse(window.localStorage.getItem('name'))
+      $('#name span.user').text(nameData.name)
+
+      var user = {
+        user: nameData.username,
+      }
+      // 退出登录
+      $('#out').on('click', function () {
+        window.localStorage.removeItem('name')
+        window.location.href = './index.html'
+      })
+
+      $('#back').on('click', function () {
+        window.history.go(-1)
+      })
+
+      var header = $('.main .center .head')
+      // 获取主题数据
+      $.ajax({
+        url: 'http://localhost:7777/api/threads/' + id,
+        type: 'GET',
+        dataType: 'json',
+        success: function (res) {
+          thread = res
+          // 设置标题
+          let tit = `
+              <div class="title">
+                <i>${res.icon}</i>
+                <span>●</spa>
+                <span>${res.thread_title}</span>
+              </div>`
+          if (res.user == nameData.username) {
+            tit += `<div class="author">
+                <span>${res.user} </span>
+                <button id="del">Del</button>
+              </div>`
+            header.append(tit)
+            // 给del添加删除事件
+            $('#del').on('click', function () {
+              delThread(id)
+              window.location.replace('./thread.html')
+            })
+          } else {
+            tit += `<div class="author">
+                <span>${res.user} </span>
+              </div>`
+            header.append(tit)
+          }
+          getPostList(res, false)
+        },
+      })
+
+      // 回复按钮绑定事件
+      $('#reply').on('click', function () {
+        // 检测文本是否为空
+        let text = $('.reply textarea').val().trim()
+        if (text == '') {
+          alert('The input box cannot be empty!')
+          return 0
+        }
+        let user = {
+          user: nameData.username,
+          text: text,
+        }
+        $.ajax({
+          url: 'http://localhost:7777/api/threads/' + id + '/posts',
+          type: 'POST',
+          data: JSON.stringify(user),
+          dataType: 'json',
+          contentType: 'application/json',
+          success: function (res) {
+            // 重新渲染到页面上
+            getPostList(res, true)
+            $('.reply textarea').val('')
+          },
+        })
+      })
+
+      // 将查询参数转换为id数据并返回
+      function getId() {
+        // 获取当前页面的查询参数
+        let search = window.location.search
+        search = search.replace(/^\?/, '')
+        search = search.split('=')
+        return search[1]
+      }
+
+      // 请求删除主题
+      function delThread(id) {
+        $.ajax({
+          type: 'DELETE',
+          url: 'http://localhost:7777/api/threads/' + id,
+          data: JSON.stringify(user),
+          dataType: 'json',
+          contentType: 'application/json',
+          success: function (res) {},
+        })
+      }
+
+      // 显示回复数据
+      function getPostList(item, isPush) {
+        if (isPush == true) {
+          thread.posts.push(item)
+        } else {
+          thread = item
+        }
+        // 设置回复数量
+        let num = thread.posts.length
+        $('.main .center .num').text(`${num} replies`)
+        // 展示列表
+        showList(thread.posts)
+      }
+
+      // 显示回复列表
+      function showList(list) {
+        let rep = ''
+        let replyList = $('.container .main .post-reply')
+        for (let i = 0; i < list.length; i++) {
+          rep += `
+          <div class="reply-item">
+            <div class="name"><span>${list[i].user}</span>:</div>
+            <div class="text">${list[i].text}</div>
+          </div>
+          `
+        }
+        replyList.empty()
+        replyList.append(rep)
+      }
+    })
+  </script>
+</html>

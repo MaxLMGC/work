@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>thread</title>
+    <link rel="stylesheet" href="./style/initialize.css" />
+    <link rel="stylesheet" href="./style/thread.css" />
+    <script src="./js/jquery3.3.1.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <!-- 头部 -->
+      <div class="header">
+        <div class="flex">
+          <!-- 左边 -->
+          <div class="left">Work</div>
+          <!-- 右边 个人界面 -->
+          <div class="login">
+            <div id="create">Create</div>
+            <div id="name">
+              <span class="user"></span>
+              <span class="triangle"></span>
+              <ul class="list">
+                <li>
+                  <span id="out">Sign out</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="main">
+        <div class="left">
+          <ul class="list-item"></ul>
+        </div>
+      </div>
+    </div>
+    <div class="toast" style="display: none">
+      <div class="flex">
+        <div id="main-title">New thread</div>
+        <input type="text" id="title" placeholder="title" />
+        <div>
+          <input type="text" id="icon" placeholder="icon" />
+          <ul class="emoji"></ul>
+        </div>
+
+        <textarea id="content" placeholder="content"></textarea>
+        <div>
+          <button id="save">Save</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    $(function () {
+      // 获取表单数据
+      var thread = {
+        user: '',
+        thread_title: '',
+        icon: '',
+        text: '',
+      }
+
+      // 渲染emoji图标列表
+      var emoji = [
+        '🎏',
+        '🎨',
+        '🏅',
+        '🎋',
+        '🎽',
+        '🎖️',
+        '🎀',
+        '♟️',
+        '🎃',
+        '🎈',
+        '🎲',
+        '🧩',
+        '⚾',
+        '⛳',
+        '🏉',
+        '🔮',
+      ]
+      let emojiList = ''
+      for (let i = 0; i < emoji.length; i++) {
+        emojiList += `<li>${emoji[i]}</li>`
+      }
+      $('.toast .emoji').append(emojiList)
+
+      // 点击emoji添加到文本框
+      $('.toast .emoji').on('click', 'li', function () {
+        thread.icon += this.innerText
+        $('#icon').val(thread.icon)
+      })
+
+      var intervalId = null
+      // icon文本框聚焦时显示emoji
+      $('#icon').focus(function () {
+        $('.toast .emoji').css('display', 'flex')
+        // 聚焦时监听文本数据
+        intervalId = setInterval(() => {
+          thread.icon = $('#icon').val()
+        }, 100)
+      })
+      $('#icon').blur(function () {
+        setTimeout(function () {
+          $('.toast .emoji').css('display', 'none')
+          if (!intervalId) {
+            clearInterval(intervalId)
+            intervalId = null
+          }
+        }, 100)
+      })
+
+      //十秒自动刷新数据
+      setInterval(function () {
+        getAllList()
+      }, 10000)
+
+      // 检测是否登录
+      if (!window.localStorage.getItem('name')) {
+        window.location.href = './index.html'
+      }
+      // 读取数据
+      var nameData = JSON.parse(window.localStorage.getItem('name'))
+      $('#name span.user').text(nameData.name)
+
+      // 进入页面先获取主题列表
+      getAllList()
+
+      // 获取ul
+      var ul = $('.container .main .left .list-item')
+
+      // 显示创建面板
+      $('#create').on('click', function () {
+        $('.toast').css('display', 'flex')
+        setTimeout(function () {
+          $('.toast .flex').eq(0)[0].style.transform = 'translate(0, 200px)'
+        }, 10)
+      })
+      $('.toast').on('click', function () {
+        $('.toast .flex').stop().eq(0)[0].style.transform = ''
+        $('.toast').stop().animate(
+          {
+            opacity: 'toggle',
+          },
+          400
+        )
+      })
+      $('.toast .flex').on('click', function (e) {
+        e.stopPropagation()
+      })
+      // 主题保存事件
+      $('#save').on('click', function () {
+        thread.user = JSON.parse(window.localStorage.getItem('name')).username
+        thread.thread_title = $('#title').val()
+        thread.icon = $('#icon').val()
+        thread.text = $('#content').val()
+        // 所有输入框都不能为空
+        if (
+          thread.user.trim() == '' ||
+          thread.thread_title.trim() == '' ||
+          thread.icon.trim() == '' ||
+          thread.text.trim() == ''
+        ) {
+          alert('The input box cannot be empty!')
+          return 0
+        }
+        // 发送创建主题的请求
+        $.ajax({
+          url: 'http://localhost:7777/api/threads',
+          type: 'POST',
+          data: JSON.stringify(thread),
+          dataType: 'json',
+          contentType: 'application/json',
+          success: function (res) {
+            // 局部刷新主题列表
+            getAllList()
+
+            // 清空文本框
+            $('#title').val('')
+            $('#icon').val('')
+            $('#content').val('')
+          },
+        })
+        $('.toast .flex').stop().eq(0)[0].style.transform = ''
+        $('.toast').stop().animate(
+          {
+            opacity: 'toggle',
+          },
+          400
+        )
+        $('.left .list-item').fadeIn('slow')
+      })
+
+      // 退出登录
+      $('#out').on('click', function () {
+        window.localStorage.removeItem('name')
+        window.location.href = './index.html'
+      })
+
+      // 获取所有主题数据
+      function getAllList() {
+        $.ajax({
+          url: 'http://localhost:7777/api/threads',
+          type: 'GET',
+          dataType: 'json',
+          success: function (res) {
+            listItem(res)
+          },
+        })
+      }
+
+      // 创建主题列表dom
+      function listItem(postList) {
+        // 添加之前先清除原先的列表数据
+        ul.empty()
+        // 循环创建dom元素
+        let item = ''
+        for (let i = 0; i < postList.length; i++) {
+          item += `<li>
+                        <div class="title">
+                          <a href="./post.html?id=${postList[i].id}">
+                            <i>${postList[i].icon}</i>
+                            <span>●</spa>
+                            <span>${postList[i].thread_title}</span>
+                          </a>
+                        </div>
+                        <div class="author">${postList[i].user}</div>
+                    </li>`
+        }
+        // 将dom元素添加到页面中
+        ul.append(item)
+      }
+    })
+  </script>
+</html>

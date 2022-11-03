@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <script src="./js/jquery3.3.1.js"></script>
+    <link rel="stylesheet" href="./style/initialize.css" />
+    <link rel="stylesheet" href="./style/login.css" />
+  </head>
+  <body>
+    <!-- 登录页面 -->
+    <div class="container">
+      <!-- 头部 -->
+      <div class="header">
+        <div class="tit">Work</div>
+      </div>
+      <!-- 登录框 -->
+      <div class="main">
+        <div class="flex">
+          <div>
+            <div class="title">Login</div>
+            <div class="form">
+              <div class="name">
+                <label for="username">Name</label>
+                <input type="text" id="username" placeholder="please..." />
+              </div>
+              <button id="submit">Login</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    $(function () {
+      if (window.localStorage.getItem('name')) {
+        window.location.href = './thread.html'
+      }
+      // 提交请求
+      $('#submit').on('click', function () {
+        submit()
+      })
+    })
+    function submit() {
+      let name = $('#username').val().trim()
+      // 检查名字是否为空
+      if (name == '') {
+        alert('The name cannot be empty!')
+        return 0
+      }
+      // 发送请求
+      $.ajax({
+        url: 'http://localhost:7777/api/users/' + name,
+        type: 'get',
+        dataType: 'json',
+        success: function (res) {
+          // 将名字存储在本地数据中
+          window.localStorage.setItem('name', JSON.stringify(res))
+          // 提示登录成功
+          alert('Login successful')
+          window.location.href = './thread.html'
+        },
+        error: function (err) {
+          // 名字没找到
+          alert(err.responseJSON.error)
+        },
+      })
+    }
+  </script>
+</html>
